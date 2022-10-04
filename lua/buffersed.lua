@@ -11,6 +11,7 @@ local function create_border_window()
     local border_buf_opts = {
         style = "minimal",
         relative = "editor",
+        border = "shadow",
         width = 102,
         height = 25,
         row = 9,
@@ -43,20 +44,23 @@ local function create_typein_window()
         col = 18
     }
 
-    api.nvim_buf_set_lines(typein_buffer, 0, -1, false, {'123'})
+    api.nvim_buf_set_lines(typein_buffer, 0, -1, false, {''})
     typein_window = api.nvim_open_win(typein_buffer, true, buf_opts)
+
+    local window = vim.wo[typein_window]
+    local buffer = vim.bo[typein_buffer]
+
+    window.scrollbind = false
+    window.wrap = false
 end
 
-
-local function open_float()
+local function create_content_buffer()
     local user_buffer = api.nvim_get_current_buf()
     local lines = api.nvim_buf_get_lines(user_buffer, 0, -1, false)
-
 
     content_buffer = api.nvim_create_buf(false, true)
     api.nvim_buf_set_option(content_buffer, 'bufhidden', 'wipe')
     api.nvim_buf_set_option(content_buffer, 'buftype', 'nowrite')
-
 
     local opts = {
         style = "minimal",
@@ -69,31 +73,37 @@ local function open_float()
 
     api.nvim_buf_set_lines(content_buffer, 0, -1, false, lines)
     api.nvim_buf_set_option(content_buffer, 'modifiable', false)
-
-
-    create_border_window()
     content_window = api.nvim_open_win(content_buffer, true, opts)
     api.nvim_win_set_option(content_window, 'winhl', 'Normal:MyHighlight')
+end
+
+
+local function open_float()
+    create_content_buffer()
+    create_border_window()
     create_typein_window()
+
     --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
     --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
 end
 
 
-function close_float()
+local function close_float()
     api.nvim_win_close(typein_window, true)
     api.nvim_win_close(content_window, true)
     api.nvim_win_close(border_win, true)
 end
 
-function set_mappings()
+local function set_mappings()
     api.nvim_buf_set_keymap(typein_buffer, 'n', 'q', ':lua require"buffersed".close_float()<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(typein_buffer, 'i', '<cr>', '<Esc>:lua require"buffersed".close_float()<cr>', { nowait = true, noremap = true, silent = true})
 end
 
-function buffersed()
+local function buffersed()
     open_float()
     set_mappings()
 end
+
 
 return {
     buffersed = buffersed,

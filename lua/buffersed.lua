@@ -3,6 +3,7 @@ local api = vim.api
 local content_buffer, content_window
 local typein_buffer, typein_window
 local border_buf, border_win
+local original_content_buffer_lines
 
 
 local function create_border_window()
@@ -56,7 +57,7 @@ end
 
 local function create_content_buffer()
     local user_buffer = api.nvim_get_current_buf()
-    local lines = api.nvim_buf_get_lines(user_buffer, 0, -1, false)
+    original_content_buffer_lines = api.nvim_buf_get_lines(user_buffer, 0, -1, false)
 
     content_buffer = api.nvim_create_buf(false, true)
     api.nvim_buf_set_option(content_buffer, 'bufhidden', 'wipe')
@@ -71,17 +72,62 @@ local function create_content_buffer()
         col = 15
     }
 
-    api.nvim_buf_set_lines(content_buffer, 0, -1, false, lines)
+    api.nvim_buf_set_lines(content_buffer, 0, -1, false, original_content_buffer_lines)
     api.nvim_buf_set_option(content_buffer, 'modifiable', false)
     content_window = api.nvim_open_win(content_buffer, true, opts)
     api.nvim_win_set_option(content_window, 'winhl', 'Normal:MyHighlight')
 end
 
+local function trim(s)
+   return s:match "^%s*(.-)%s*$"
+end
+
+local function print_typein_text()
+    local lines = api.nvim_buf_get_lines(typein_buffer, 0, 1, false)
+    local grep_line = lines[1]
+
+    local content_lines = original_content_buffer_lines
+    local filtered_lines = {}
+    local extmarks = {}
+    local namespace = require('highlights').namespace_id
+
+    local new_index = 1
+    for index,str in ipairs(content_lines) do
+        local start_index, end_index = string.find(str, grep_line)
+        if start_index or trim(grep_line) == '' then
+            if(trim(grep_line)) ~= '' then
+                local coordinates = {}
+                coordinates.line = new_index
+                coordinates.start_col = start_index
+                coordinates.end_col = end_index
+                extmarks[new_index] = coordinates
+            end
+
+            filtered_lines[new_index] = str
+            new_index = new_index + 1
+        end
+    end
+
+
+    api.nvim_buf_set_option(content_buffer, 'modifiable', true)
+    api.nvim_buf_set_lines(content_buffer, 0, -1, false, filtered_lines)
+    api.nvim_buf_set_option(content_buffer, 'modifiable', false)
+    for i, coordinates in pairs(extmarks) do
+        api.nvim_buf_set_extmark(content_buffer, namespace, coordinates.line - 1, coordinates.start_col - 1, {end_row = coordinates.line - 1, end_col = coordinates.end_col, hl_group = 'BuffersedSearchHighlight'})
+    end
+end
 
 local function open_float()
     create_content_buffer()
+
     create_border_window()
     create_typein_window()
+
+    api.nvim_command('augroup TypinCommandHandler')
+    api.nvim_command('autocmd!')
+    api.nvim_command("autocmd TextChangedI <buffer=" .. typein_buffer .. "> lua require('buffersed').print_typein_text()")
+    api.nvim_command("autocmd TextChanged <buffer=" .. typein_buffer .. "> lua require('buffersed').print_typein_text()")
+    api.nvim_command('augroup end')
 
     --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
     --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
@@ -107,5 +153,6 @@ end
 
 return {
     buffersed = buffersed,
-    close_float = close_float
+    close_float = close_float,
+    print_typein_text = print_typein_text
 }

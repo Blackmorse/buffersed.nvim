@@ -5,6 +5,14 @@ local typein_buffer, typein_window
 local border_buf, border_win
 local original_content_buffer_lines
 
+local width = api.nvim_get_option("columns")
+local height = api.nvim_get_option("lines")
+
+local content_height = math.max(10, math.ceil(height * 0.5 - 4))
+local content_width = math.max(20, math.ceil(width * 0.8))
+
+local content_row = math.ceil((height  - content_height) / 2 - 1)
+local content_col = math.ceil((width - content_width) / 2)
 
 local function create_border_window()
     border_buf = api.nvim_create_buf(false, true)
@@ -13,20 +21,20 @@ local function create_border_window()
         style = "minimal",
         relative = "editor",
         border = "shadow",
-        width = 102,
-        height = 25,
-        row = 9,
-        col = 14
+        width = content_width + 2,
+        height = content_height + 4,
+        row = content_row - 1,
+        col = content_col - 1
     }
-    local border_lines = { '╭' .. string.rep('─', 100) .. '╮' }
-    local middle_line = '│' .. string.rep(' ', 100) .. '│'
-    for i=1, 20 do
+    local border_lines = { '╭' .. string.rep('─', content_width) .. '╮' }
+    local middle_line = '│' .. string.rep(' ', content_width) .. '│'
+    for i=1, content_height do
       table.insert(border_lines, middle_line)
     end
-    table.insert(border_lines, '├' .. string.rep('─', 100) .. '┤')
-    table.insert(border_lines, '│ > '..string.rep(' ', 97) .. '│')
+    table.insert(border_lines, '├' .. string.rep('─', content_width) .. '┤')
+    table.insert(border_lines, '│ > '..string.rep(' ', content_width - 3) .. '│')
 
-    table.insert(border_lines, '╰' .. string.rep('─', 100) .. '╯')
+    table.insert(border_lines, '╰' .. string.rep('─', content_width) .. '╯')
     api.nvim_buf_set_lines(border_buf, 0, -1, false, border_lines)
 
     border_win = api.nvim_open_win(border_buf, true, border_buf_opts)
@@ -39,10 +47,10 @@ local function create_typein_window()
     local buf_opts = {
         style = "minimal",
         relative = "editor",
-        width = 97,
+        width = content_width - 3,
         height = 1,
-        row = 31,
-        col = 18
+        row = content_row + content_height + 1,
+        col = content_col + 3
     }
 
     api.nvim_buf_set_lines(typein_buffer, 0, -1, false, {''})
@@ -66,10 +74,10 @@ local function create_content_buffer()
     local opts = {
         style = "minimal",
         relative = "editor",
-        width = 100,
-        height = 20,
-        row = 10,
-        col = 15
+        width = content_width,
+        height = content_height,
+        row = content_row,
+        col = content_col
     }
 
     api.nvim_buf_set_lines(content_buffer, 0, -1, false, original_content_buffer_lines)
@@ -82,7 +90,7 @@ local function trim(s)
    return s:match "^%s*(.-)%s*$"
 end
 
-local function print_typein_text()
+local function update_typein_buffer()
     local lines = api.nvim_buf_get_lines(typein_buffer, 0, 1, false)
     local grep_line = lines[1]
 
@@ -125,10 +133,11 @@ local function open_float()
 
     api.nvim_command('augroup TypinCommandHandler')
     api.nvim_command('autocmd!')
-    api.nvim_command("autocmd TextChangedI <buffer=" .. typein_buffer .. "> lua require('buffersed').print_typein_text()")
-    api.nvim_command("autocmd TextChanged <buffer=" .. typein_buffer .. "> lua require('buffersed').print_typein_text()")
+    api.nvim_command("autocmd TextChangedI <buffer=" .. typein_buffer .. "> lua require('buffersed').update_typein_buffer()")
+    api.nvim_command("autocmd TextChanged <buffer=" .. typein_buffer .. "> lua require('buffersed').update_typein_buffer()")
     api.nvim_command('augroup end')
 
+    api.nvim_command('startinsert')
     --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
     --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
 end
@@ -154,5 +163,5 @@ end
 return {
     buffersed = buffersed,
     close_float = close_float,
-    print_typein_text = print_typein_text
+    update_typein_buffer = update_typein_buffer
 }

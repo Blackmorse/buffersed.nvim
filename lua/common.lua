@@ -1,5 +1,9 @@
 local api = vim.api
 
+local function trim(s)
+   return s:match "^%s*(.-)%s*$"
+end
+
 local function dimensions()
     local result = {}
     result.width = vim.api.nvim_get_option("columns")
@@ -64,5 +68,6 @@ end
 return {
     dimensions = dimensions,
     create_sd_content_buffer = create_sd_content_buffer,
-    create_typein_buffer = create_typein_buffer
+    create_typein_buffer = create_typein_buffer,
+    trim = trim
 }

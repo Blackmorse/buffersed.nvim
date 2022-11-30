@@ -4,7 +4,10 @@ local M = {}
 
 function M.init_highlights()
     api.nvim_command('highlight default BuffersedSearchHighlight guifg=#ff007c gui=bold ctermfg=198 cterm=bold ctermbg=darkgreen')
-    M.namespace_id = api.nvim_create_namespace('BuffersedSearchHighlightNamespace')
+    api.nvim_command('highlight default BuffersedSedHighlightS guifg=#1f007c gui=bold ctermfg=198 cterm=bold ctermbg=red')
+    api.nvim_command('highlight default BuffersedSedHighlightD guifg=#4f007c gui=bold ctermfg=198 cterm=bold ctermbg=darkgreen')
+    M.search_namespace = api.nvim_create_namespace('BuffersedSearchHighlightNamespace')
+    M.s_sed_namespace = api.nvim_create_namespace('BuffersedSearchHighlightNamespace')
 end
 
 function M.run_autocommands()

@@ -15,6 +15,8 @@ local content_row = math.ceil((height  - content_height) / 2 - 1)
 local content_col = math.ceil((width - content_width) / 2)
 
 local dimensions = require('common').dimensions()
+local trim = require('common').trim
+
 
 local function create_border_window()
     border_buf = api.nvim_create_buf(false, true)
@@ -43,10 +45,6 @@ local function create_border_window()
     api.nvim_win_set_option(border_win, 'winhl', 'Normal:MyHighlight')
 end
 
-local function trim(s)
-   return s:match "^%s*(.-)%s*$"
-end
-
 local function update_typein_buffer()
     local lines = api.nvim_buf_get_lines(typein_buffer, 0, 1, false)
     local grep_line = lines[1]
@@ -54,7 +52,7 @@ local function update_typein_buffer()
     local content_lines = original_content_buffer_lines
     local filtered_lines = {}
     local extmarks = {}
-    local namespace = require('highlights').namespace_id
+    local namespace = require('highlights').search_namespace
 
     local new_index = 1
     for index,str in ipairs(content_lines) do
@@ -72,7 +70,6 @@ local function update_typein_buffer()
             new_index = new_index + 1
         end
     end
-
 
     api.nvim_buf_set_option(content_buffer, 'modifiable', true)
     api.nvim_buf_set_lines(content_buffer, 0, -1, false, filtered_lines)

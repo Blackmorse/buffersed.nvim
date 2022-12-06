@@ -79,25 +79,33 @@ local function update_typein_buffer()
     end
 end
 
-local function set_autocommands()
-
-    api.nvim_command('augroup TypinCommandHandler')
-    api.nvim_command('autocmd!')
-    api.nvim_command("autocmd TextChangedI <buffer=" .. typein_buffer .. "> lua require('buffersearch').update_typein_buffer()")
-    api.nvim_command("autocmd TextChanged <buffer=" .. typein_buffer .. "> lua require('buffersearch').update_typein_buffer()")
-    api.nvim_command('augroup end')
-
-    api.nvim_command('startinsert')
-    --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
-    --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
-end
-
 
 local function close_float()
     api.nvim_win_close(typein_window, true)
     api.nvim_win_close(content_window, true)
     api.nvim_win_close(border_win, true)
 end
+
+local function set_autocommands()
+    local typein_group = api.nvim_create_augroup("TypinCommandHandler", {clear = true})
+    api.nvim_create_autocmd({"TextChangedI", "TextChanged"}, {
+        buffer = typein_buffer,
+        group = typein_group,
+        callback = update_typein_buffer
+    })
+
+    local close_group = api.nvim_create_augroup("SearchGroupClose", {clear = true})
+    api.nvim_create_autocmd({"BufLeave"}, {
+        buffer = typein_buffer,
+        group = close_group,
+        callback = close_float
+    })
+
+    api.nvim_command('startinsert')
+    --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
+    --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
+end
+
 
 local function set_mappings()
     api.nvim_buf_set_keymap(typein_buffer, 'n', 'q', ':lua require"buffersearch".close_float()<cr>', { nowait = true, noremap = true, silent = true})

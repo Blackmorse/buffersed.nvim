@@ -44,12 +44,44 @@ local function create_splitted_border_window()
     return border_buffer, border_window
 end
 
-local function set_mappings()
-    api.nvim_buf_set_keymap(s_typein_buffer, 'i', '<Tab>', '<Esc>:lua vim.fn.win_gotoid(' .. d_typein_window ..')<cr>:startinsert<cr>', { nowait = true, noremap = true, silent = true})
+local function close_windows()
+    api.nvim_win_close(s_typein_window, true)
+    api.nvim_win_close(d_typein_window, true)
+    api.nvim_win_close(s_content_window, true)
+    api.nvim_win_close(d_content_window, true)
+    api.nvim_win_close(border_win, true)
+end
 
-    api.nvim_buf_set_keymap(s_typein_buffer, 'n', '<Tab>', '<Esc>:lua vim.fn.win_gotoid(' .. d_typein_window ..')<cr>', { nowait = true, noremap = true, silent = true})
-    api.nvim_buf_set_keymap(d_typein_buffer, 'i', '<Tab>', '<Esc>:lua vim.fn.win_gotoid(' .. s_typein_window ..')<cr>:startinsert<cr>', { nowait = true, noremap = true, silent = true})
-    api.nvim_buf_set_keymap(d_typein_buffer, 'n', '<Tab>', ':lua vim.fn.win_gotoid(' .. s_typein_window ..')<cr>', { nowait = true, noremap = true, silent = true})
+local function create_close_autogrp()
+    local close_buf_group_id = api.nvim_create_augroup("TypeinCloseGroup", {clear = true})
+    api.nvim_create_autocmd({"BufLeave"}, {
+        buffer = s_typein_buffer,
+        group = close_buf_group_id,
+        callback = close_windows
+    })
+
+    api.nvim_create_autocmd({"BufLeave"}, {
+        buffer = d_typein_buffer,
+        group = close_buf_group_id,
+        callback = close_windows
+    })
+end
+
+local function switch_to_window_with_tab(window, insert_mode)
+    -- delete and re-create close autocommands to disable closing when pressing <Tab>
+    api.nvim_del_augroup_by_name("TypeinCloseGroup")
+    vim.fn.win_gotoid(window)
+    create_close_autogrp()
+    if insert_mode then
+        api.nvim_command('startinsert')
+    end
+end
+
+local function set_mappings()
+    api.nvim_buf_set_keymap(s_typein_buffer, 'i', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. d_typein_window ..', true)<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(s_typein_buffer, 'n', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. d_typein_window ..', false)<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(d_typein_buffer, 'i', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. s_typein_window ..', true)<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(d_typein_buffer, 'n', '<Tab>', ':lua require("buffersed").switch_to_window_with_tab(' .. s_typein_window ..', false)<cr>', { nowait = true, noremap = true, silent = true})
 end
 
 local function find_all_matching_indexes(s, f)
@@ -152,14 +184,22 @@ local function update_d_buffer()
     end
 end
 
+
 local function set_autocommands()
-    api.nvim_command('augroup TypinCommandHandler')
-    api.nvim_command('autocmd!')
-    api.nvim_command("autocmd TextChangedI <buffer=" .. s_typein_buffer .. "> lua require('buffersed').update_s_buffer(); require('buffersed').update_d_buffer()")
-    api.nvim_command("autocmd TextChanged <buffer=" .. s_typein_buffer .. "> lua require('buffersed').update_s_buffer(); require('buffersed').update_d_buffer()")
-    api.nvim_command("autocmd TextChangedI <buffer=" .. d_typein_buffer .. "> lua require('buffersed').update_s_buffer(); require('buffersed').update_d_buffer()")
-    api.nvim_command("autocmd TextChanged <buffer=" .. d_typein_buffer .. "> lua require('buffersed').update_s_buffer(); require('buffersed').update_d_buffer()")
-    api.nvim_command('augroup end')
+    local type_group_id = api.nvim_create_augroup("TypinCommandHandler", {clear = true})
+    api.nvim_create_autocmd({"TextChangedI", "TextChanged"}, {
+        buffer = s_typein_buffer,
+        group = type_group_id,
+        callback = function () update_s_buffer(); update_d_buffer() end
+    })
+
+    api.nvim_create_autocmd({"TextChangedI", "TextChanged"}, {
+        buffer = d_typein_buffer,
+        group = type_group_id,
+        callback = function () update_s_buffer(); update_d_buffer() end
+    })
+
+    create_close_autogrp()
 end
 
 local function buffersed()
@@ -184,5 +224,6 @@ end
 return {
      buffersed = buffersed,
      update_s_buffer = update_s_buffer,
-     update_d_buffer = update_d_buffer
+     update_d_buffer = update_d_buffer,
+     switch_to_window_with_tab = switch_to_window_with_tab
 }

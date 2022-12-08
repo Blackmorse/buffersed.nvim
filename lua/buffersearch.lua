@@ -16,6 +16,7 @@ local content_col = math.ceil((width - content_width) / 2)
 
 local dimensions = require('common').dimensions()
 local trim = require('common').trim
+local set_scrolling_mappings = require('common').set_scrolling_mappings
 
 
 local function create_border_window()
@@ -102,14 +103,15 @@ local function set_autocommands()
     })
 
     api.nvim_command('startinsert')
-    --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
-    --api.nvim_command('au BufWipeout <buffer> exe "silent bwipeout! "'..border_buf)
 end
 
 
 local function set_mappings()
     api.nvim_buf_set_keymap(typein_buffer, 'n', 'q', ':lua require"buffersearch".close_float()<cr>', { nowait = true, noremap = true, silent = true})
     api.nvim_buf_set_keymap(typein_buffer, 'i', '<cr>', '<Esc>:lua require"buffersearch".close_float()<cr>', { nowait = true, noremap = true, silent = true})
+
+
+    set_scrolling_mappings({content_window}, {typein_buffer}, {'i', 'n'})
 end
 
 local function buffsearch()

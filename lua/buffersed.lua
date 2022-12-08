@@ -10,6 +10,7 @@ local dimensions = require('common').dimensions()
 local s_extmarks = {}
 local d_extmarks = {}
 local trim = require('common').trim
+local set_scrolling_mappings = require('common').set_scrolling_mappings
 
 local function create_splitted_border_window()
     local border_buffer = api.nvim_create_buf(false, true)
@@ -82,6 +83,8 @@ local function set_mappings()
     api.nvim_buf_set_keymap(s_typein_buffer, 'n', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. d_typein_window ..', false)<cr>', { nowait = true, noremap = true, silent = true})
     api.nvim_buf_set_keymap(d_typein_buffer, 'i', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. s_typein_window ..', true)<cr>', { nowait = true, noremap = true, silent = true})
     api.nvim_buf_set_keymap(d_typein_buffer, 'n', '<Tab>', ':lua require("buffersed").switch_to_window_with_tab(' .. s_typein_window ..', false)<cr>', { nowait = true, noremap = true, silent = true})
+
+    set_scrolling_mappings({s_content_window, d_content_window}, {s_typein_buffer, d_typein_buffer}, {'i', 'n'})
 end
 
 local function find_all_matching_indexes(s, f)
@@ -185,6 +188,7 @@ local function update_d_buffer()
 end
 
 
+
 local function set_autocommands()
     local type_group_id = api.nvim_create_augroup("TypinCommandHandler", {clear = true})
     api.nvim_create_autocmd({"TextChangedI", "TextChanged"}, {
@@ -219,11 +223,14 @@ local function buffersed()
 
     set_mappings()
     set_autocommands()
+
+    --api.nvim_win_set_cursor(s_content_window, {math.ceil(dimensions.content_height / 2), 0} )
 end
 
 return {
      buffersed = buffersed,
      update_s_buffer = update_s_buffer,
      update_d_buffer = update_d_buffer,
-     switch_to_window_with_tab = switch_to_window_with_tab
+     switch_to_window_with_tab = switch_to_window_with_tab,
+     scroll = scroll
 }

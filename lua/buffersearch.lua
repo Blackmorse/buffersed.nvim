@@ -16,7 +16,6 @@ local content_col = math.ceil((width - content_width) / 2)
 
 local dimensions = require('common').dimensions()
 local trim = require('common').trim
-local set_scrolling_mappings = require('common').set_scrolling_mappings
 
 
 local function create_border_window()
@@ -44,6 +43,7 @@ local function create_border_window()
 
     border_win = api.nvim_open_win(border_buf, true, border_buf_opts)
     api.nvim_win_set_option(border_win, 'winhl', 'Normal:MyHighlight')
+    api.nvim_win_set_option(border_win, 'scrollbind', false)
 end
 
 local function update_typein_buffer()
@@ -87,6 +87,31 @@ local function close_float()
     api.nvim_win_close(border_win, true)
 end
 
+local function create_close_autogrp()
+    local close_buf_group_id = api.nvim_create_augroup("BuffersearchCloseGroup", { clear = true })
+    api.nvim_create_autocmd({"BufLeave"}, {
+        buffer = typein_buffer,
+        group = close_buf_group_id,
+        callback = close_float
+    })
+
+    api.nvim_create_autocmd({"BufLeave"}, {
+        buffer = content_buffer,
+        group = close_buf_group_id,
+        callback = close_float
+    })
+end
+
+local function switch_to_window_with_tab(window, insert_mode)
+    -- delete and re-create close autocommands to disable closing when pressing <Tab>
+    api.nvim_del_augroup_by_name("BuffersearchCloseGroup")
+    vim.fn.win_gotoid(window)
+    create_close_autogrp()
+    if insert_mode then
+        api.nvim_command('startinsert')
+    end
+end
+
 local function set_autocommands()
     local typein_group = api.nvim_create_augroup("TypinCommandHandler", {clear = true})
     api.nvim_create_autocmd({"TextChangedI", "TextChanged"}, {
@@ -95,23 +120,22 @@ local function set_autocommands()
         callback = update_typein_buffer
     })
 
-    local close_group = api.nvim_create_augroup("SearchGroupClose", {clear = true})
-    api.nvim_create_autocmd({"BufLeave"}, {
+    api.nvim_create_autocmd({"InsertLeave"}, {
         buffer = typein_buffer,
-        group = close_group,
-        callback = close_float
+        group = typein_group,
+        callback = function() switch_to_window_with_tab(content_window, false) end
     })
+
+    create_close_autogrp()
 
     api.nvim_command('startinsert')
 end
 
 
 local function set_mappings()
-    api.nvim_buf_set_keymap(typein_buffer, 'n', 'q', ':lua require"buffersearch".close_float()<cr>', { nowait = true, noremap = true, silent = true})
     api.nvim_buf_set_keymap(typein_buffer, 'i', '<cr>', '<Esc>:lua require"buffersearch".close_float()<cr>', { nowait = true, noremap = true, silent = true})
 
-
-    set_scrolling_mappings({content_window}, {typein_buffer}, {'i', 'n'})
+    api.nvim_buf_set_keymap(content_buffer, 'n', 'i', ':lua require("buffersearch").switch_to_window_with_tab(' .. typein_window .. ', true)<cr>', { nowait = true, noremap = true, silent = true})
 end
 
 local function buffsearch()
@@ -131,5 +155,6 @@ end
 return {
     buffersearch = buffsearch,
     close_float = close_float,
-    update_typein_buffer = update_typein_buffer
+    update_typein_buffer = update_typein_buffer,
+    switch_to_window_with_tab = switch_to_window_with_tab
 }

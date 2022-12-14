@@ -5,15 +5,6 @@ local typein_buffer, typein_window
 local border_buf, border_win
 local original_content_buffer_lines
 
-local width = api.nvim_get_option("columns")
-local height = api.nvim_get_option("lines")
-
-local content_height = math.max(10, math.ceil(height * 0.5 - 4))
-local content_width = math.max(20, math.ceil(width * 0.8))
-
-local content_row = math.ceil((height  - content_height) / 2 - 1)
-local content_col = math.ceil((width - content_width) / 2)
-
 local dimensions = require('common').dimensions()
 local trim = require('common').trim
 
@@ -25,20 +16,20 @@ local function create_border_window()
         style = "minimal",
         relative = "editor",
         border = "shadow",
-        width = content_width + 2,
+        width = dimensions.content_width + 2,
         height = dimensions.content_height + 4,
-        row = content_row - 1,
-        col = content_col - 1
+        row = dimensions.content_row - 1,
+        col = dimensions.content_col - 1
     }
-    local border_lines = { '╭' .. string.rep('─', content_width) .. '╮' }
-    local middle_line = '│' .. string.rep(' ', content_width) .. '│'
-    for i=1, content_height do
+    local border_lines = { '╭' .. string.rep('─', dimensions.content_width) .. '╮' }
+    local middle_line = '│' .. string.rep(' ', dimensions.content_width) .. '│'
+    for i=1, dimensions.content_height do
       table.insert(border_lines, middle_line)
     end
-    table.insert(border_lines, '├' .. string.rep('─', content_width) .. '┤')
-    table.insert(border_lines, '│ > '..string.rep(' ', content_width - 3) .. '│')
+    table.insert(border_lines, '├' .. string.rep('─', dimensions.content_width) .. '┤')
+    table.insert(border_lines, '│ > '..string.rep(' ', dimensions.content_width - 3) .. '│')
 
-    table.insert(border_lines, '╰' .. string.rep('─', content_width) .. '╯')
+    table.insert(border_lines, '╰' .. string.rep('─', dimensions.content_width) .. '╯')
     api.nvim_buf_set_lines(border_buf, 0, -1, false, border_lines)
 
     border_win = api.nvim_open_win(border_buf, true, border_buf_opts)
@@ -145,7 +136,7 @@ local function buffsearch()
     content_buffer, content_window = require('common').create_sd_content_buffer(dimensions.content_col, dimensions.content_row, dimensions.content_width, dimensions.content_height, original_content_buffer_lines)
 
     create_border_window()
-    typein_buffer, typein_window = require('common').create_typein_buffer(content_col + 3, content_row + content_height + 1, content_width - 3)
+    typein_buffer, typein_window = require('common').create_typein_buffer(dimensions.content_col + 3, dimensions.content_row + dimensions.content_height + 1, dimensions.content_width - 3)
 
     set_autocommands()
     set_mappings()

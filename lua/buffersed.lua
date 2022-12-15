@@ -6,14 +6,14 @@ local s_typein_buffer, s_typein_window, d_typein_buffer, d_typein_window
 
 local  original_content_buffer_lines
 
-local dimensions = require('common').dimensions()
-local buf_width = math.ceil(dimensions.content_width / 2)
 local s_extmarks = {}
 local d_extmarks = {}
 local trim = require('common').trim
 local set_scrolling_mappings = require('common').set_scrolling_mappings
 
 local function create_splitted_border_window()
+    local dimensions = require('common').sizes.dimensions
+
     local border_buffer = api.nvim_create_buf(false, true)
     api.nvim_buf_set_option(border_buffer, 'buftype', 'nowrite')
 
@@ -21,22 +21,22 @@ local function create_splitted_border_window()
         style = "minimal",
         relative = "editor",
         border = "shadow",
-        width = buf_width * 2 + 3, -- 3 = borders total width
+        width = dimensions.sed_buf_width * 2 + 3, -- 3 = borders total width
         height = dimensions.content_height + 4, -- 4 = for the bottom pane
         row = dimensions.content_row - 1,
         col = dimensions.content_col - 1,
         zindex = 50
     }
 
-    local border_lines = { '╭' .. string.rep('─', buf_width) .. '┬' .. string.rep('─', buf_width) .. '╮' }
-    local middle_line = '│' .. string.rep(' ', buf_width) .. '│' .. string.rep(' ', buf_width) .. '│'
+    local border_lines = { '╭' .. string.rep('─', dimensions.sed_buf_width) .. '┬' .. string.rep('─', dimensions.sed_buf_width) .. '╮' }
+    local middle_line = '│' .. string.rep(' ', dimensions.sed_buf_width) .. '│' .. string.rep(' ', dimensions.sed_buf_width) .. '│'
     for i=1, dimensions.content_height do
       table.insert(border_lines, middle_line)
     end
-    table.insert(border_lines, '├' .. string.rep('─', buf_width) .. '┼' .. string.rep('─', buf_width) .. '┤')
-    table.insert(border_lines, '│ > '..string.rep(' ', buf_width - 3) .. '│ > ' .. string.rep(' ', buf_width - 3) .. '│')
+    table.insert(border_lines, '├' .. string.rep('─', dimensions.sed_buf_width) .. '┼' .. string.rep('─', dimensions.sed_buf_width) .. '┤')
+    table.insert(border_lines, '│ > '..string.rep(' ', dimensions.sed_buf_width - 3) .. '│ > ' .. string.rep(' ', dimensions.sed_buf_width - 3) .. '│')
 
-    table.insert(border_lines, '╰' .. string.rep('─', buf_width) .. '┴' .. string.rep('─', buf_width) .. '╯')
+    table.insert(border_lines, '╰' .. string.rep('─', dimensions.sed_buf_width) .. '┴' .. string.rep('─', dimensions.sed_buf_width) .. '╯')
     api.nvim_buf_set_lines(border_buffer, 0, -1, false, border_lines)
 
     local border_window = api.nvim_open_win(border_buffer, true, border_buf_opts)
@@ -248,15 +248,16 @@ local function set_autocommands()
 end
 
 local function buffersed()
+    local dimensions = require('common').sizes.dimensions
     local user_buffer = api.nvim_get_current_buf()
     original_content_buffer_lines = api.nvim_buf_get_lines(user_buffer, 0, -1, false)
 
-    s_content_buffer, s_content_window = require('common').create_sd_content_buffer(dimensions.content_col, dimensions.content_row, buf_width, dimensions.content_height, original_content_buffer_lines)
-    d_content_buffer, d_content_window = require('common').create_sd_content_buffer(dimensions.content_col + buf_width + 1, dimensions.content_row, buf_width, dimensions.content_height, original_content_buffer_lines)
+    s_content_buffer, s_content_window = require('common').create_sd_content_buffer(dimensions.content_col, dimensions.content_row, dimensions.sed_buf_width, dimensions.content_height, original_content_buffer_lines)
+    d_content_buffer, d_content_window = require('common').create_sd_content_buffer(dimensions.content_col + dimensions.sed_buf_width + 1, dimensions.content_row, dimensions.sed_buf_width, dimensions.content_height, original_content_buffer_lines)
     border_buf, border_win = create_splitted_border_window()
 
-    s_typein_buffer, s_typein_window = require('common').create_typein_buffer(dimensions.content_col + 3, dimensions.content_row + dimensions.content_height + 1, buf_width - 3)
-    d_typein_buffer, d_typein_window = require('common').create_typein_buffer(dimensions.content_col + 4 + buf_width, dimensions.content_row + dimensions.content_height + 1, buf_width - 3)
+    s_typein_buffer, s_typein_window = require('common').create_typein_buffer(dimensions.content_col + 3, dimensions.content_row + dimensions.content_height + 1, dimensions.sed_buf_width - 3)
+    d_typein_buffer, d_typein_window = require('common').create_typein_buffer(dimensions.content_col + 4 + dimensions.sed_buf_width, dimensions.content_row + dimensions.content_height + 1, dimensions.sed_buf_width - 3)
 
     vim.fn.win_gotoid(s_typein_window)
     api.nvim_command('startinsert')
@@ -270,5 +271,6 @@ return {
      buffersed = buffersed,
      update_s_buffer = update_s_buffer,
      update_d_buffer = update_d_buffer,
-     switch_to_window_with_tab = switch_to_window_with_tab
+     switch_to_window_with_tab = switch_to_window_with_tab,
+     set_config = set_config
 }

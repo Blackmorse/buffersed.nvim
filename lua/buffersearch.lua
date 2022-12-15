@@ -5,11 +5,11 @@ local typein_buffer, typein_window
 local border_buf, border_win
 local original_content_buffer_lines
 
-local dimensions = require('common').dimensions()
 local trim = require('common').trim
 
 
 local function create_border_window()
+    local dimensions = require('common').sizes.dimensions
     border_buf = api.nvim_create_buf(false, true)
 
     local border_buf_opts = {
@@ -124,12 +124,14 @@ end
 
 
 local function set_mappings()
+    local dimensions = require('common').sizes.dimensions
     api.nvim_buf_set_keymap(typein_buffer, 'i', '<cr>', '<Esc>:lua require"buffersearch".close_float()<cr>', { nowait = true, noremap = true, silent = true})
 
     api.nvim_buf_set_keymap(content_buffer, 'n', 'i', ':lua require("buffersearch").switch_to_window_with_tab(' .. typein_window .. ', true)<cr>', { nowait = true, noremap = true, silent = true})
 end
 
 local function buffsearch()
+    local dimensions = require('common').sizes.dimensions
     local user_buffer = api.nvim_get_current_buf()
     original_content_buffer_lines = api.nvim_buf_get_lines(user_buffer, 0, -1, false)
 

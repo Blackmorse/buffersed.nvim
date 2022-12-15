@@ -1,21 +1,48 @@
 local api = vim.api
 
+local sizes = {}
+
 local function trim(s)
    return s:match "^%s*(.-)%s*$"
 end
 
-local function dimensions()
+local function calculate_dimensions(custom_width, custom_height, custom_row, custom_col)
     local result = {}
     result.width = vim.api.nvim_get_option("columns")
     result.height = vim.api.nvim_get_option("lines")
 
-    result.content_height = math.max(10, math.ceil(result.height * 0.5 - 4))
-    result.content_width = math.max(20, math.ceil(result.width * 0.8))
+    if custom_height and math.ceil(custom_height) == custom_height then
+        result.content_height = math.min(custom_height, result.height - 10)
+    elseif custom_height and math.ceil(custom_height) ~= custom_height then
+        result.content_height = math.max(10, math.ceil(result.height * custom_height - 4))
+    else
+        result.content_height = math.max(10, math.ceil(result.height * 0.5 - 4))
+    end
 
-    result.content_row = math.ceil((result.height  - result.content_height) / 2 - 1)
-    result.content_col = math.ceil((result.width - result.content_width) / 2)
+    if custom_width and math.ceil(custom_width) == custom_width then
+        result.content_width = math.min(result.width - 5, custom_width)
+    elseif custom_width and math.ceil(custom_width) ~= custom_width then
+        result.content_width = math.max(20, math.ceil(result.width * custom_width))
+    else
+        result.content_width = math.max(20, math.ceil(result.width * 0.8))
+    end
+
+    result.content_row = custom_row or math.ceil((result.height  - result.content_height) / 2 - 1)
+    result.content_col = custom_col or math.ceil((result.width - result.content_width) / 2)
 
     return result
+end
+
+local function set_config(config)
+    config = config or {}
+    local custom_width = config.width
+    local custom_height = config.height
+    local custom_row = config.custom_position_row
+    local custom_col = config.custom_position_col
+
+    sizes.dimensions = calculate_dimensions(custom_width, custom_height, custom_row, custom_col)
+
+    sizes.dimensions.sed_buf_width = math.ceil(sizes.dimensions.content_width / 2)
 end
 
 local function create_sd_content_buffer(col, row, width, height, lines)
@@ -40,7 +67,7 @@ local function create_sd_content_buffer(col, row, width, height, lines)
     api.nvim_win_set_option(sd_content_window, 'scrolloff', 999)
     api.nvim_win_set_option(sd_content_window, 'scrollbind', true)
 
-    api.nvim_win_set_cursor(sd_content_window, {math.ceil(height / 2), 0} )
+    api.nvim_win_set_cursor(sd_content_window, {math.ceil(math.min(height / 2, #lines)), 0} )
 
     return sd_content_buffer, sd_content_window
 end
@@ -71,8 +98,9 @@ end
 
 
 return {
-    dimensions = dimensions,
+    sizes = sizes,
     create_sd_content_buffer = create_sd_content_buffer,
     create_typein_buffer = create_typein_buffer,
-    trim = trim
+    trim = trim,
+    set_config = set_config
 }

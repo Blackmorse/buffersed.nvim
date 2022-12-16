@@ -11,10 +11,12 @@ local function setup(user_conf)
         function(opts) require('buffersed').buffersed() end,
         {})
 
-    require('highlights').init_highlights()
-    require('highlights').run_autocommands()
 
     require('common').set_config(user_conf)
+    require('highlights').set_config(user_conf)
+
+    require('highlights').init_highlights()
+    require('highlights').run_autocommands()
 end
 return {
     setup = setup

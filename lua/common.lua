@@ -1,6 +1,6 @@
 local api = vim.api
 
-local sizes = {}
+local configuration = {}
 
 local function trim(s)
    return s:match "^%s*(.-)%s*$"
@@ -40,9 +40,9 @@ local function set_config(config)
     local custom_row = config.custom_position_row
     local custom_col = config.custom_position_col
 
-    sizes.dimensions = calculate_dimensions(custom_width, custom_height, custom_row, custom_col)
+    configuration.dimensions = calculate_dimensions(custom_width, custom_height, custom_row, custom_col)
 
-    sizes.dimensions.sed_buf_width = math.ceil(sizes.dimensions.content_width / 2)
+    configuration.dimensions.sed_buf_width = math.ceil(configuration.dimensions.content_width / 2)
 end
 
 local function create_sd_content_buffer(col, row, width, height, lines)
@@ -98,7 +98,7 @@ end
 
 
 return {
-    sizes = sizes,
+    configuration = configuration,
     create_sd_content_buffer = create_sd_content_buffer,
     create_typein_buffer = create_typein_buffer,
     trim = trim,

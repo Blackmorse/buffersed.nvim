@@ -12,7 +12,7 @@ local trim = require('common').trim
 local set_scrolling_mappings = require('common').set_scrolling_mappings
 
 local function create_splitted_border_window()
-    local dimensions = require('common').sizes.dimensions
+    local dimensions = require('common').configuration.dimensions
 
     local border_buffer = api.nvim_create_buf(false, true)
     api.nvim_buf_set_option(border_buffer, 'buftype', 'nowrite')
@@ -248,7 +248,7 @@ local function set_autocommands()
 end
 
 local function buffersed()
-    local dimensions = require('common').sizes.dimensions
+    local dimensions = require('common').configuration.dimensions
     local user_buffer = api.nvim_get_current_buf()
     original_content_buffer_lines = api.nvim_buf_get_lines(user_buffer, 0, -1, false)
 

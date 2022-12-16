@@ -81,27 +81,24 @@ local function create_close_autogrp()
     })
 end
 
-local function switch_to_window_with_tab(window, insert_mode)
+local function switch_to_window_with_tab(window)
     -- delete and re-create close autocommands to disable closing when pressing <Tab>
     api.nvim_del_augroup_by_name("TypeinCloseGroup")
     vim.fn.win_gotoid(window)
     create_close_autogrp()
-    if insert_mode then
-        api.nvim_command('startinsert')
-    end
 end
 
 local function set_mappings()
-    api.nvim_buf_set_keymap(s_typein_buffer, 'i', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. d_typein_window ..', true)<cr>', { nowait = true, noremap = true, silent = true})
-    api.nvim_buf_set_keymap(s_typein_buffer, 'n', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. d_typein_window ..', false)<cr>', { nowait = true, noremap = true, silent = true})
-    api.nvim_buf_set_keymap(d_typein_buffer, 'i', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. s_typein_window ..', true)<cr>', { nowait = true, noremap = true, silent = true})
-    api.nvim_buf_set_keymap(d_typein_buffer, 'n', '<Tab>', ':lua require("buffersed").switch_to_window_with_tab(' .. s_typein_window ..', false)<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(s_typein_buffer, 'i', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. d_typein_window ..')<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(s_typein_buffer, 'n', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. d_typein_window ..')<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(d_typein_buffer, 'i', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. s_typein_window ..')<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(d_typein_buffer, 'n', '<Tab>', ':lua require("buffersed").switch_to_window_with_tab(' .. s_typein_window ..')<cr>', { nowait = true, noremap = true, silent = true})
 
-    api.nvim_buf_set_keymap(s_content_buffer, 'n', 'i', ':lua require("buffersed").switch_to_window_with_tab(' .. s_typein_window .. ', true)<cr>:startinsert<cr>', { nowait = true, noremap = true, silent = true})
-    api.nvim_buf_set_keymap(d_content_buffer, 'n', 'i', ':lua require("buffersed").switch_to_window_with_tab(' .. d_typein_window .. ', true)<cr>:startinsert<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(s_content_buffer, 'n', 'i', ':lua require("buffersed").switch_to_window_with_tab(' .. s_typein_window .. ')<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(d_content_buffer, 'n', 'i', ':lua require("buffersed").switch_to_window_with_tab(' .. d_typein_window .. ')<cr>', { nowait = true, noremap = true, silent = true})
 
-    api.nvim_buf_set_keymap(s_content_buffer, 'n', '<Tab>', ':lua require("buffersed").switch_to_window_with_tab(' .. d_content_window .. ', false)<cr>', { nowait = true, noremap = true, silent = true})
-    api.nvim_buf_set_keymap(d_content_buffer, 'n', '<Tab>', ':lua require("buffersed").switch_to_window_with_tab(' .. s_content_window .. ', false)<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(s_content_buffer, 'n', '<Tab>', ':lua require("buffersed").switch_to_window_with_tab(' .. d_content_window .. ')<cr>', { nowait = true, noremap = true, silent = true})
+    api.nvim_buf_set_keymap(d_content_buffer, 'n', '<Tab>', ':lua require("buffersed").switch_to_window_with_tab(' .. s_content_window .. ')<cr>', { nowait = true, noremap = true, silent = true})
 end
 
 local function find_all_matching_indexes(s, f)
@@ -244,6 +241,18 @@ local function set_autocommands()
         callback = function() switch_to_window_with_tab(d_typein_buffer, true) end
     })
 
+    api.nvim_create_autocmd({"BufEnter"}, {
+        buffer = s_typein_buffer,
+        group = type_group_id,
+        callback = require('common').start_insert
+    })
+
+    api.nvim_create_autocmd({"BufEnter"}, {
+        buffer = d_typein_buffer,
+        group = type_group_id,
+        callback = require('common').start_insert
+    })
+
     create_close_autogrp()
 end
 
@@ -260,7 +269,6 @@ local function buffersed()
     d_typein_buffer, d_typein_window = require('common').create_typein_buffer(dimensions.content_col + 4 + dimensions.sed_buf_width, dimensions.content_row + dimensions.content_height + 1, dimensions.sed_buf_width - 3)
 
     vim.fn.win_gotoid(s_typein_window)
-    api.nvim_command('startinsert')
 
     set_mappings()
     set_autocommands()

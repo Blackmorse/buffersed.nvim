@@ -96,11 +96,20 @@ local function create_typein_buffer(col, row, width)
     return typein_buffer, typein_window
 end
 
+local function start_insert()
+    api.nvim_command('startinsert')
+    local window = api.nvim_get_current_win()
+    local pos = api.nvim_win_get_cursor(window)
+    local row = pos[1]
+    local col = pos[2]
+    api.nvim_win_set_cursor(window, {row, col + 1})
+end
 
 return {
     configuration = configuration,
     create_sd_content_buffer = create_sd_content_buffer,
     create_typein_buffer = create_typein_buffer,
     trim = trim,
+    start_insert = start_insert,
     set_config = set_config
 }

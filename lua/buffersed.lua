@@ -4,6 +4,7 @@ local border_buf, border_win
 local s_content_buffer, s_content_window, d_content_buffer, d_content_window
 local s_typein_buffer, s_typein_window, d_typein_buffer, d_typein_window
 
+local user_buffer
 local  original_content_buffer_lines
 
 local s_extmarks = {}
@@ -88,6 +89,27 @@ local function switch_to_window_with_tab(window)
     create_close_autogrp()
 end
 
+local function confirmation()
+    local typein_line = api.nvim_buf_get_lines(s_typein_buffer, 0, 1, false)[1]
+    if typein_line == '' then
+        api.nvim_del_augroup_by_name("TypeinCloseGroup")
+        close_windows()
+        return
+    end
+    vim.ui.select({"Yes", "No"}, {
+        prompt = "Are you sure you want to replace original buffer?"
+    },
+    function(choice, idx)
+        if choice == "Yes" then
+            local replaced_lines = api.nvim_buf_get_lines(d_content_buffer, 0, -1, false)
+            api.nvim_buf_set_lines(user_buffer, 0, -1, false, replaced_lines)
+            local close_buf_group_id = api.nvim_create_augroup("TypeinCloseGroup", {clear = true})
+            api.nvim_del_augroup_by_name("TypeinCloseGroup")
+            close_windows()
+        end
+    end)
+end
+
 local function set_mappings()
     api.nvim_buf_set_keymap(s_typein_buffer, 'i', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. d_typein_window ..')<cr>', { nowait = true, noremap = true, silent = true})
     api.nvim_buf_set_keymap(s_typein_buffer, 'n', '<Tab>', '<Esc>:lua require("buffersed").switch_to_window_with_tab(' .. d_typein_window ..')<cr>', { nowait = true, noremap = true, silent = true})
@@ -99,6 +121,9 @@ local function set_mappings()
 
     api.nvim_buf_set_keymap(s_content_buffer, 'n', '<Tab>', ':lua require("buffersed").switch_to_window_with_tab(' .. d_content_window .. ')<cr>', { nowait = true, noremap = true, silent = true})
     api.nvim_buf_set_keymap(d_content_buffer, 'n', '<Tab>', ':lua require("buffersed").switch_to_window_with_tab(' .. s_content_window .. ')<cr>', { nowait = true, noremap = true, silent = true})
+
+    vim.keymap.set('i', '<CR>', confirmation, { nowait = true, noremap = true, silent = true, buffer = s_typein_buffer})
+    vim.keymap.set('i', '<CR>', confirmation, { nowait = true, noremap = true, silent = true, buffer = d_typein_buffer})
 end
 
 local function find_all_matching_indexes(s, f)
@@ -258,7 +283,7 @@ end
 
 local function buffersed()
     local dimensions = require('common').configuration.dimensions
-    local user_buffer = api.nvim_get_current_buf()
+    user_buffer = api.nvim_get_current_buf()
     original_content_buffer_lines = api.nvim_buf_get_lines(user_buffer, 0, -1, false)
 
     s_content_buffer, s_content_window = require('common').create_sd_content_buffer(dimensions.content_col, dimensions.content_row, dimensions.sed_buf_width, dimensions.content_height, original_content_buffer_lines)
@@ -273,6 +298,7 @@ local function buffersed()
     set_mappings()
     set_autocommands()
 
+    api.nvim_command('startinsert')
 end
 
 return {

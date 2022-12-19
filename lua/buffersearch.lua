@@ -143,6 +143,8 @@ local function buffsearch()
 
     set_autocommands()
     set_mappings()
+
+    api.nvim_command('startinsert')
 end
 
 

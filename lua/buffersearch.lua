@@ -75,6 +75,8 @@ end
 
 
 local function close_float()
+    api.nvim_del_augroup_by_name("BuffersearchCloseGroup")
+
     api.nvim_win_close(typein_window, true)
     api.nvim_win_close(content_window, true)
     api.nvim_win_close(border_win, true)
@@ -114,7 +116,7 @@ end
 
 local function set_mappings()
     local dimensions = require('common').configuration.dimensions
-    api.nvim_buf_set_keymap(typein_buffer, 'i', '<cr>', '<Esc>:lua require"buffersearch".close_float()<cr>', { nowait = true, noremap = true, silent = true})
+    vim.keymap.set('i', '<cr>', close_float, { buffer = typein_buffer, nowait = true, noremap = true, silent = true })
 
     navigate_content_mappings()
 end

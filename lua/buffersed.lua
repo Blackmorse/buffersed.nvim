@@ -48,6 +48,8 @@ local function create_splitted_border_window()
 end
 
 local function close_windows()
+    api.nvim_del_augroup_by_name("TypeinCloseGroup")
+
     api.nvim_win_close(s_typein_window, true)
     api.nvim_win_close(d_typein_window, true)
     api.nvim_win_close(s_content_window, true)
@@ -84,7 +86,6 @@ end
 local function confirmation()
     local typein_line = api.nvim_buf_get_lines(s_typein_buffer, 0, 1, false)[1]
     if typein_line == '' then
-        api.nvim_del_augroup_by_name("TypeinCloseGroup")
         close_windows()
         return
     end
@@ -96,7 +97,6 @@ local function confirmation()
             local replaced_lines = api.nvim_buf_get_lines(d_content_buffer, 0, -1, false)
             api.nvim_buf_set_lines(shared.user_buffer, 0, -1, false, replaced_lines)
             local close_buf_group_id = api.nvim_create_augroup("TypeinCloseGroup", {clear = true})
-            api.nvim_del_augroup_by_name("TypeinCloseGroup")
             close_windows()
         end
     end)

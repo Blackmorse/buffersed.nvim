@@ -4,7 +4,7 @@ local border_buf, border_win
 local s_content_buffer, s_content_window, d_content_buffer, d_content_window
 local s_typein_buffer, s_typein_window, d_typein_buffer, d_typein_window
 
-local user_buffer
+local shared = {}
 local  original_content_buffer_lines
 
 local s_extmarks = {}
@@ -53,6 +53,8 @@ local function close_windows()
     api.nvim_win_close(s_content_window, true)
     api.nvim_win_close(d_content_window, true)
     api.nvim_win_close(border_win, true)
+
+    shared.user_buffer = nil
 end
 
 local function create_close_autogrp()
@@ -92,7 +94,7 @@ local function confirmation()
     function(choice, idx)
         if choice == "Yes" then
             local replaced_lines = api.nvim_buf_get_lines(d_content_buffer, 0, -1, false)
-            api.nvim_buf_set_lines(user_buffer, 0, -1, false, replaced_lines)
+            api.nvim_buf_set_lines(shared.user_buffer, 0, -1, false, replaced_lines)
             local close_buf_group_id = api.nvim_create_augroup("TypeinCloseGroup", {clear = true})
             api.nvim_del_augroup_by_name("TypeinCloseGroup")
             close_windows()
@@ -269,8 +271,10 @@ end
 
 local function buffersed()
     local dimensions = require('common').configuration.dimensions
-    user_buffer = api.nvim_get_current_buf()
-    original_content_buffer_lines = api.nvim_buf_get_lines(user_buffer, 0, -1, false)
+    local maybe = require('buffersearch').shared.user_buffer
+    shared.user_buffer = maybe and maybe or api.nvim_get_current_buf()
+
+    original_content_buffer_lines = api.nvim_buf_get_lines(shared.user_buffer, 0, -1, false)
 
     s_content_buffer, s_content_window = require('common').create_sd_content_buffer(dimensions.content_col, dimensions.content_row, dimensions.sed_buf_width, dimensions.content_height, original_content_buffer_lines)
     d_content_buffer, d_content_window = require('common').create_sd_content_buffer(dimensions.content_col + dimensions.sed_buf_width + 1, dimensions.content_row, dimensions.sed_buf_width, dimensions.content_height, original_content_buffer_lines)
@@ -295,5 +299,6 @@ end
 return {
      buffersed = buffersed,
      update_s_buffer = update_s_buffer,
-     updatclose_buf_group_id = update_d_buffer
+     updatclose_buf_group_id = update_d_buffer,
+     shared = shared
 }

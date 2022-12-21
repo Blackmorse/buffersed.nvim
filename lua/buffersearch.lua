@@ -5,6 +5,8 @@ local typein_buffer, typein_window
 local border_buf, border_win
 local original_content_buffer_lines
 
+local shared = {}
+
 local trim = require('common').trim
 
 
@@ -76,18 +78,14 @@ local function close_float()
     api.nvim_win_close(typein_window, true)
     api.nvim_win_close(content_window, true)
     api.nvim_win_close(border_win, true)
+
+    shared.user_buffer = nil
 end
 
 local function create_close_autogrp()
     local close_buf_group_id = api.nvim_create_augroup("BuffersearchCloseGroup", { clear = true })
     api.nvim_create_autocmd({"BufLeave"}, {
         buffer = typein_buffer,
-        group = close_buf_group_id,
-        callback = close_float
-    })
-
-    api.nvim_create_autocmd({"BufLeave"}, {
-        buffer = content_buffer,
         group = close_buf_group_id,
         callback = close_float
     })
@@ -99,12 +97,6 @@ local function set_autocommands()
         buffer = typein_buffer,
         group = typein_group,
         callback = update_typein_buffer
-    })
-
-    api.nvim_create_autocmd({"InsertLeave"}, {
-        buffer = typein_buffer,
-        group = typein_group,
-        callback = function() close_float() end
     })
 
     create_close_autogrp()
@@ -129,8 +121,10 @@ end
 
 local function buffsearch()
     local dimensions = require('common').configuration.dimensions
-    local user_buffer = api.nvim_get_current_buf()
-    original_content_buffer_lines = api.nvim_buf_get_lines(user_buffer, 0, -1, false)
+
+    local maybe = require('buffersed').shared.user_buffer
+    shared.user_buffer = maybe and maybe or api.nvim_get_current_buf()
+    original_content_buffer_lines = api.nvim_buf_get_lines(shared.user_buffer, 0, -1, false)
 
     content_buffer, content_window = require('common').create_sd_content_buffer(dimensions.content_col, dimensions.content_row, dimensions.content_width, dimensions.content_height, original_content_buffer_lines)
 
@@ -157,5 +151,6 @@ end
 return {
     buffersearch = buffsearch,
     close_float = close_float,
-    update_typein_buffer = update_typein_buffer
+    update_typein_buffer = update_typein_buffer,
+    shared = shared
 }

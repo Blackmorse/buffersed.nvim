@@ -93,13 +93,6 @@ local function create_close_autogrp()
     })
 end
 
-local function switch_to_window_with_tab(window)
-    -- delete and re-create close autocommands to disable closing when pressing <Tab>
-    api.nvim_del_augroup_by_name("BuffersearchCloseGroup")
-    vim.fn.win_gotoid(window)
-    create_close_autogrp()
-end
-
 local function set_autocommands()
     local typein_group = api.nvim_create_augroup("TypinCommandHandler", {clear = true})
     api.nvim_create_autocmd({"TextChangedI", "TextChanged"}, {
@@ -111,24 +104,27 @@ local function set_autocommands()
     api.nvim_create_autocmd({"InsertLeave"}, {
         buffer = typein_buffer,
         group = typein_group,
-        callback = function() switch_to_window_with_tab(content_window) end
-    })
-
-    api.nvim_create_autocmd({"BufEnter"}, {
-        buffer = typein_buffer,
-        group = typein_group,
-        callback = require('common').start_insert
+        callback = function() close_float() end
     })
 
     create_close_autogrp()
 end
 
+local function navigate_content_mappings()
+    local half_height = math.ceil(require('common').configuration.dimensions.content_height / 2)
+    local scroll_down = require('common').scroll_down
+
+    vim.keymap.set('i', '<C-n>', function() scroll_down(content_window, content_buffer, 1) end, { nowait = true, noremap = true, silent = true, buffer = typein_buffer})
+    vim.keymap.set('i', '<C-p>', function() scroll_down(content_window, content_buffer, -1) end, { nowait = true, noremap = true, silent = true, buffer = typein_buffer})
+    vim.keymap.set('i', '<C-d>', function() scroll_down(content_window, content_buffer, half_height) end, { nowait = true, noremap = true, silent = true, buffer = typein_buffer})
+    vim.keymap.set('i', '<C-u>', function() scroll_down(content_window, content_buffer, -half_height) end, { nowait = true, noremap = true, silent = true, buffer = typein_buffer})
+end
 
 local function set_mappings()
     local dimensions = require('common').configuration.dimensions
     api.nvim_buf_set_keymap(typein_buffer, 'i', '<cr>', '<Esc>:lua require"buffersearch".close_float()<cr>', { nowait = true, noremap = true, silent = true})
 
-    api.nvim_buf_set_keymap(content_buffer, 'n', 'i', ':lua require("buffersearch").switch_to_window_with_tab(' .. typein_window .. ')<cr>', { nowait = true, noremap = true, silent = true})
+    navigate_content_mappings()
 end
 
 local function buffsearch()
@@ -141,16 +137,25 @@ local function buffsearch()
     create_border_window()
     typein_buffer, typein_window = require('common').create_typein_buffer(dimensions.content_col + 3, dimensions.content_row + dimensions.content_height + 1, dimensions.content_width - 3)
 
-    set_autocommands()
     set_mappings()
+    set_autocommands()
 
-    api.nvim_command('startinsert')
+    local half_height = math.min(math.ceil(dimensions.content_height / 2), #original_content_buffer_lines)
+
+    api.nvim_win_set_cursor(content_window, {half_height ,1})
+    local namespace = require('highlights').line_namespace
+
+    vim.fn.win_gotoid(typein_window)
+    require('common').start_insert()
+
+    local scroll_down = require('common').scroll_down
+    -- to make highlight happen
+    vim.defer_fn(function() scroll_down(content_window, content_buffer, 0) end, 100)
 end
 
 
 return {
     buffersearch = buffsearch,
     close_float = close_float,
-    update_typein_buffer = update_typein_buffer,
-    switch_to_window_with_tab = switch_to_window_with_tab
+    update_typein_buffer = update_typein_buffer
 }

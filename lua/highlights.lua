@@ -1,19 +1,24 @@
 local api = vim.api
 local M = {}
 local s_highlight, d_highlight
+local selection_highlight
 
 function M.set_config(user_conf)
     local conf = user_conf or {}
     s_highlight = conf.search_highlight or "guifg=#ff007c gui=bold ctermfg=198 cterm=bold ctermbg=darkgreen"
     d_highlight = conf.replace_highlight or "guifg=#1f007c gui=bold ctermfg=198 cterm=bold ctermbg=red"
+    selection_highlight = conf.selection_highlight or "guifg=#1f007c gui=bold ctermfg=198 cterm=bold ctermbg=gray"
+
 end
 
 function M.init_highlights()
     api.nvim_command('highlight default BuffersedSearchHighlight ' .. s_highlight)
     api.nvim_command('highlight default BuffersedSedHighlightS ' .. s_highlight)
     api.nvim_command('highlight default BuffersedSedHighlightD ' .. d_highlight)
+    api.nvim_command('highlight default BufferSedLineHighlight ' .. selection_highlight)
     M.search_namespace = api.nvim_create_namespace('BuffersedSearchHighlightNamespace')
     M.s_sed_namespace = api.nvim_create_namespace('BuffersedSearchHighlightNamespace')
+    M.line_namespace = api.nvim_create_namespace('BuffersedLineHighlight')
 end
 
 function M.run_autocommands()

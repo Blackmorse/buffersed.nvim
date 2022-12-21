@@ -105,11 +105,31 @@ local function start_insert()
     api.nvim_win_set_cursor(window, {row, col + 1})
 end
 
+local function scroll_down(content_window, content_buffer, lines)
+    local namespace = require('highlights').line_namespace
+
+    local coordinates = api.nvim_win_get_cursor(content_window)
+    local row = coordinates[1]
+    local col = coordinates[2]
+    api.nvim_buf_clear_namespace(content_buffer, namespace, 0, -1)
+
+    local all_lines = api.nvim_buf_get_lines(content_buffer, 0, -1, false)
+
+    local new_line_position = math.min(math.max(1, row + lines), #all_lines)
+    api.nvim_win_set_cursor(content_window, {new_line_position, 1})
+
+    local current_line = all_lines[new_line_position]
+    local length = string.len(current_line)
+
+    api.nvim_buf_set_extmark(content_buffer, namespace, new_line_position - 1, 0, {end_row = new_line_position - 1,  end_col = length, hl_group = 'BuffersedLineHighlight'})
+end
+
 return {
     configuration = configuration,
     create_sd_content_buffer = create_sd_content_buffer,
     create_typein_buffer = create_typein_buffer,
     trim = trim,
     start_insert = start_insert,
-    set_config = set_config
+    set_config = set_config,
+    scroll_down = scroll_down
 }

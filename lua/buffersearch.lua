@@ -117,6 +117,10 @@ end
 local function set_mappings()
     local dimensions = require('common').configuration.dimensions
     vim.keymap.set('i', '<cr>', close_float, { buffer = typein_buffer, nowait = true, noremap = true, silent = true })
+    -- Todo insert, normal mode.
+    vim.keymap.set('i', '<esc><esc>', close_float, {buffer = typein_buffer, nowait = true, noremap = true, silent = true})
+    vim.keymap.set('n', '<esc><esc>', close_float, {buffer = typein_buffer, nowait = true, noremap = true, silent = true})
+    vim.keymap.set('i', '<C-c>', close_float, {buffer = typein_buffer, nowait = true, noremap = true, silent = true})
 
     navigate_content_mappings()
 end

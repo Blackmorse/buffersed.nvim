@@ -140,11 +140,20 @@ local function navigate_content_mappings(target_buffer)
 end
 
 local function set_mappings()
-    vim.keymap.set('i', '<Tab>', function() switch_to_window_with_tab(d_typein_window) end, {buffer = s_typein_buffer, nowait = true, silent = true, noremap = true})
-    vim.keymap.set('i', '<Tab>', function() switch_to_window_with_tab(s_typein_window) end, {buffer = d_typein_buffer, nowait = true, silent = true, noremap = true})
+    vim.keymap.set({ 'i', 'n' }, '<Tab>', function() switch_to_window_with_tab(d_typein_window) end, {buffer = s_typein_buffer, nowait = true, silent = true, noremap = true})
+    vim.keymap.set({ 'i', 'n' }, '<Tab>', function() switch_to_window_with_tab(s_typein_window) end, {buffer = d_typein_buffer, nowait = true, silent = true, noremap = true})
 
     vim.keymap.set('i', '<CR>', confirmation, { nowait = true, noremap = true, silent = true, buffer = s_typein_buffer})
     vim.keymap.set('i', '<CR>', confirmation, { nowait = true, noremap = true, silent = true, buffer = d_typein_buffer})
+
+    -- multiply buffers
+    vim.keymap.set('i', '<esc><esc>', close_windows, {buffer = s_typein_buffer, nowait = true, noremap = true, silent = true})
+    vim.keymap.set('n', '<esc><esc>', close_windows, {buffer = s_typein_buffer, nowait = true, noremap = true, silent = true})
+    vim.keymap.set('i', '<C-c>', close_windows, {buffer = s_typein_buffer, nowait = true, noremap = true, silent = true})
+
+    vim.keymap.set('i', '<esc><esc>', close_windows, {buffer = d_typein_buffer, nowait = true, noremap = true, silent = true})
+    vim.keymap.set('n', '<esc><esc>', close_windows, {buffer = d_typein_buffer, nowait = true, noremap = true, silent = true})
+    vim.keymap.set('i', '<C-c>', close_windows, {buffer = d_typein_buffer, nowait = true, noremap = true, silent = true})
 
     -- TODO plugin for mult buffers, modes
     navigate_content_mappings(s_typein_buffer)

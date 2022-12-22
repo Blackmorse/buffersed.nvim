@@ -106,7 +106,7 @@ local function start_insert()
 end
 
 local function scroll_down(content_window, content_buffer, lines)
-    local namespace = require('highlights').line_namespace
+    local namespace = require('buffersed.highlights').line_namespace
 
     local coordinates = api.nvim_win_get_cursor(content_window)
     local row = coordinates[1]

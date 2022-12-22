@@ -7,11 +7,11 @@ local original_content_buffer_lines
 
 local shared = {}
 
-local trim = require('common').trim
+local trim = require('buffersed.common').trim
 
 
 local function create_border_window()
-    local dimensions = require('common').configuration.dimensions
+    local dimensions = require('buffersed.common').configuration.dimensions
     border_buf = api.nvim_create_buf(false, true)
 
     local border_buf_opts = {
@@ -46,7 +46,7 @@ local function update_typein_buffer()
     local content_lines = original_content_buffer_lines
     local filtered_lines = {}
     local extmarks = {}
-    local namespace = require('highlights').search_namespace
+    local namespace = require('buffersed.highlights').search_namespace
 
     local new_index = 1
     for index,str in ipairs(content_lines) do
@@ -105,8 +105,8 @@ local function set_autocommands()
 end
 
 local function navigate_content_mappings()
-    local half_height = math.ceil(require('common').configuration.dimensions.content_height / 2)
-    local scroll_down = require('common').scroll_down
+    local half_height = math.ceil(require('buffersed.common').configuration.dimensions.content_height / 2)
+    local scroll_down = require('buffersed.common').scroll_down
 
     vim.keymap.set('i', '<C-n>', function() scroll_down(content_window, content_buffer, 1) end, { nowait = true, noremap = true, silent = true, buffer = typein_buffer})
     vim.keymap.set('i', '<C-p>', function() scroll_down(content_window, content_buffer, -1) end, { nowait = true, noremap = true, silent = true, buffer = typein_buffer})
@@ -115,7 +115,7 @@ local function navigate_content_mappings()
 end
 
 local function set_mappings()
-    local dimensions = require('common').configuration.dimensions
+    local dimensions = require('buffersed.common').configuration.dimensions
     vim.keymap.set('i', '<cr>', close_float, { buffer = typein_buffer, nowait = true, noremap = true, silent = true })
     -- Todo insert, normal mode.
     vim.keymap.set('i', '<esc><esc>', close_float, {buffer = typein_buffer, nowait = true, noremap = true, silent = true})
@@ -126,16 +126,16 @@ local function set_mappings()
 end
 
 local function buffsearch()
-    local dimensions = require('common').configuration.dimensions
+    local dimensions = require('buffersed.common').configuration.dimensions
 
-    local maybe = require('buffersed').shared.user_buffer
+    local maybe = require('buffersed.sed').shared.user_buffer
     shared.user_buffer = maybe and maybe or api.nvim_get_current_buf()
     original_content_buffer_lines = api.nvim_buf_get_lines(shared.user_buffer, 0, -1, false)
 
-    content_buffer, content_window = require('common').create_sd_content_buffer(dimensions.content_col, dimensions.content_row, dimensions.content_width, dimensions.content_height, original_content_buffer_lines)
+    content_buffer, content_window = require('buffersed.common').create_sd_content_buffer(dimensions.content_col, dimensions.content_row, dimensions.content_width, dimensions.content_height, original_content_buffer_lines)
 
     create_border_window()
-    typein_buffer, typein_window = require('common').create_typein_buffer(dimensions.content_col + 3, dimensions.content_row + dimensions.content_height + 1, dimensions.content_width - 3)
+    typein_buffer, typein_window = require('buffersed.common').create_typein_buffer(dimensions.content_col + 3, dimensions.content_row + dimensions.content_height + 1, dimensions.content_width - 3)
 
     set_mappings()
     set_autocommands()
@@ -143,12 +143,12 @@ local function buffsearch()
     local half_height = math.min(math.ceil(dimensions.content_height / 2), #original_content_buffer_lines)
 
     api.nvim_win_set_cursor(content_window, {half_height ,1})
-    local namespace = require('highlights').line_namespace
+    local namespace = require('buffersed.highlights').line_namespace
 
     vim.fn.win_gotoid(typein_window)
-    require('common').start_insert()
+    require('buffersed.common').start_insert()
 
-    local scroll_down = require('common').scroll_down
+    local scroll_down = require('buffersed.common').scroll_down
     -- to make highlight happen
     vim.defer_fn(function() scroll_down(content_window, content_buffer, 0) end, 100)
 end

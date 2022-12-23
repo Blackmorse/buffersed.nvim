@@ -1,5 +1,6 @@
 local b = vim.b
 local api = vim.api
+local convimient = require('convimient')
 local content_buffer, content_window
 local typein_buffer, typein_window
 local border_buf, border_win
@@ -115,12 +116,7 @@ local function navigate_content_mappings()
 end
 
 local function set_mappings()
-    local dimensions = require('buffersed.common').configuration.dimensions
-    vim.keymap.set('i', '<cr>', close_float, { buffer = typein_buffer, nowait = true, noremap = true, silent = true })
-    -- Todo insert, normal mode.
-    vim.keymap.set('i', '<esc><esc>', close_float, {buffer = typein_buffer, nowait = true, noremap = true, silent = true})
-    vim.keymap.set('n', '<esc><esc>', close_float, {buffer = typein_buffer, nowait = true, noremap = true, silent = true})
-    vim.keymap.set('i', '<C-c>', close_float, {buffer = typein_buffer, nowait = true, noremap = true, silent = true})
+    convimient.vim_keymap_set({'i', 'n'}, {'<cr>', '<esc><esc>', '<C-c>'}, close_float, { nowait = true, noremap = true, silent = true}, typein_buffer)
 
     navigate_content_mappings()
 end

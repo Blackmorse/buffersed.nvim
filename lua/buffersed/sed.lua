@@ -1,5 +1,7 @@
 local b = vim.b
 local api = vim.api
+local convimient = require('convimient')
+
 local border_buf, border_win
 local s_content_buffer, s_content_window, d_content_buffer, d_content_window
 local s_typein_buffer, s_typein_window, d_typein_buffer, d_typein_window
@@ -61,19 +63,7 @@ end
 
 local function create_close_autogrp()
     local close_buf_group_id = api.nvim_create_augroup("TypeinCloseGroup", {clear = true})
-    -- TODO multiply commands
-    api.nvim_create_autocmd({"BufLeave"}, {
-        buffer = s_typein_buffer,
-        group = close_buf_group_id,
-        callback = close_windows
-    })
-
-    api.nvim_create_autocmd({"BufLeave"}, {
-        buffer = d_typein_buffer,
-        group = close_buf_group_id,
-        callback = close_windows
-    })
-
+    convimient.vim_create_autocmd({"BufLeave"}, { group = close_buf_group_id, callback = close_windows}, {s_typein_buffer, d_typein_buffer})
 end
 
 local function switch_to_window_with_tab(window)
@@ -102,62 +92,34 @@ local function confirmation()
     end)
 end
 
-local function navigate_content_mappings(target_buffer)
+local function navigate_content_mappings()
     local half_height = math.ceil(require('buffersed.common').configuration.dimensions.content_height / 2)
     local scroll_down = require('buffersed.common').scroll_down
 
-    vim.keymap.set('i', '<C-n>',
-        function()
-            scroll_down(s_content_window, s_content_buffer, 1)
-            scroll_down(d_content_window, d_content_buffer, 1)
-        end,
-        { nowait = true, noremap = true, silent = true, buffer = target_buffer}
-    )
+    local opts = { nowait = true, noremap = true, silent = true }
+    local buffers = { s_typein_buffer, d_typein_buffer }
+    local scroll_func = function(lines)
+        return function ()
+            scroll_down(s_content_window, s_content_buffer, lines)
+            scroll_down(d_content_window, d_content_buffer, lines)
+        end
+    end
 
-    vim.keymap.set('i', '<C-p>',
-        function()
-            scroll_down(s_content_window, s_content_buffer, -1)
-            scroll_down(d_content_window, d_content_buffer, -1)
-        end,
-        { nowait = true, noremap = true, silent = true, buffer = target_buffer}
-    )
-
-    vim.keymap.set('i', '<C-d>',
-        function()
-            scroll_down(s_content_window, s_content_buffer, half_height)
-            scroll_down(d_content_window, d_content_buffer, half_height)
-        end,
-        { nowait = true, noremap = true, silent = true, buffer = target_buffer}
-    )
-
-    vim.keymap.set('i', '<C-u>',
-        function()
-            scroll_down(s_content_window, s_content_buffer, -half_height)
-            scroll_down(d_content_window, d_content_buffer, -half_height)
-        end,
-        { nowait = true, noremap = true, silent = true, buffer = target_buffer}
-    )
+    convimient.vim_keymap_set('i', '<C-n>', scroll_func(1), opts, buffers)
+    convimient.vim_keymap_set('i', '<C-p>', scroll_func(-1), opts, buffers)
+    convimient.vim_keymap_set('i', '<C-d>', scroll_func(half_height), opts, buffers)
+    convimient.vim_keymap_set('i', '<C-u>', scroll_func(-half_height), opts, buffers)
 end
 
 local function set_mappings()
+    convimient.vim_keymap_set({'i', 'n'}, '<CR>', confirmation, { nowait = true, noremap = true, silent = true }, {s_typein_buffer, d_typein_buffer})
+
     vim.keymap.set({ 'i', 'n' }, '<Tab>', function() switch_to_window_with_tab(d_typein_window) end, {buffer = s_typein_buffer, nowait = true, silent = true, noremap = true})
     vim.keymap.set({ 'i', 'n' }, '<Tab>', function() switch_to_window_with_tab(s_typein_window) end, {buffer = d_typein_buffer, nowait = true, silent = true, noremap = true})
 
-    vim.keymap.set('i', '<CR>', confirmation, { nowait = true, noremap = true, silent = true, buffer = s_typein_buffer})
-    vim.keymap.set('i', '<CR>', confirmation, { nowait = true, noremap = true, silent = true, buffer = d_typein_buffer})
+    convimient.vim_keymap_set({'i', 'n'}, {'<esc><esc>', '<C-c>'}, close_windows, { nowait = true, noremap = true, silent = true}, {s_typein_buffer, d_typein_buffer})
 
-    -- multiply buffers
-    vim.keymap.set('i', '<esc><esc>', close_windows, {buffer = s_typein_buffer, nowait = true, noremap = true, silent = true})
-    vim.keymap.set('n', '<esc><esc>', close_windows, {buffer = s_typein_buffer, nowait = true, noremap = true, silent = true})
-    vim.keymap.set('i', '<C-c>', close_windows, {buffer = s_typein_buffer, nowait = true, noremap = true, silent = true})
-
-    vim.keymap.set('i', '<esc><esc>', close_windows, {buffer = d_typein_buffer, nowait = true, noremap = true, silent = true})
-    vim.keymap.set('n', '<esc><esc>', close_windows, {buffer = d_typein_buffer, nowait = true, noremap = true, silent = true})
-    vim.keymap.set('i', '<C-c>', close_windows, {buffer = d_typein_buffer, nowait = true, noremap = true, silent = true})
-
-    -- TODO plugin for mult buffers, modes
-    navigate_content_mappings(s_typein_buffer)
-    navigate_content_mappings(d_typein_buffer)
+    navigate_content_mappings()
 end
 
 local function find_all_matching_indexes(s, f)
@@ -263,17 +225,10 @@ end
 
 local function set_autocommands()
     local type_group_id = api.nvim_create_augroup("TypinCommandHandler", {clear = true})
-    api.nvim_create_autocmd({"TextChangedI", "TextChanged"}, {
-        buffer = s_typein_buffer,
+    convimient.vim_create_autocmd({"TextChangedI", "TextChanged"}, {
         group = type_group_id,
-        callback = function () update_s_buffer(); update_d_buffer() end
-    })
-
-    api.nvim_create_autocmd({"TextChangedI", "TextChanged"}, {
-        buffer = d_typein_buffer,
-        group = type_group_id,
-        callback = function () update_s_buffer(); update_d_buffer() end
-    })
+        callback = function() update_s_buffer(); update_d_buffer() end
+    }, {s_typein_buffer, d_typein_buffer})
 
     create_close_autogrp()
 end

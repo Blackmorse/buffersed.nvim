@@ -34,12 +34,13 @@ Here some keymap available:
  - `Ctrl-d,Ctl-u`: move up and down half of the screen
  - `<Esc><Esc>` or `Ctrl-C`: quit
  - `<CR>`: perform the replacement in the original buffer (with confirmation)
+ - `<Tab>`: switch between <i>search</i> and <i>replace</i> prompts
 
 ## Configuration
 Here is an example of all the configuration options:
 ```lua
 require("buffersed").setup({
-    width = 0.8, -- could be float (relative to the window sized) or integer
+    width = 0.8, -- could be a float (relative to the window sized) or integer
     height = 0.5, -- the same
     custom_position_row = 3, -- floating window row position
     custom_position_col = 4, --floating window column position

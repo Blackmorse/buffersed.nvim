@@ -23,9 +23,13 @@ use {
 
 <b>BufferSearch</b> allows you to search and filter lines without a match, highlighting matched substrings.
 
+https://user-images.githubusercontent.com/13163993/209626394-9f7f3794-2fb7-4d6a-a7ff-9ca978b5863e.mov
+
 ## BufferSed
+
 <b>BufferSed</b> displays a floating window showing the difference before and after a replacement, highlighting the difference. After hitting `<CR>`, the original buffer content will be replaced (with confirmation).
 
+https://user-images.githubusercontent.com/13163993/209626992-435f187a-daf8-4c51-9801-2045e22038e3.mov
 
 ## Keymaps
 Here some keymap available:
